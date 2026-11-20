@@ -1651,6 +1651,8 @@ a { color: inherit; }
 .outcome-table .t-match { min-width: 190px; white-space: normal; }
 .outcome-table .t-teams { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 12.5px; font-weight: 700; color: var(--text); }
 .outcome-table .t-teams i { font-style: normal; font-size: 9px; font-weight: 600; color: var(--dim); text-transform: uppercase; }
+.outcome-table .t-comp { margin-top: 3px; font-size: 10px; color: var(--dim); }
+.outcome-table .t-comp .linkish { font-weight: 500; font-size: 10px; color: var(--muted); }
 .outcome-table .t-score { font-size: 13px; font-weight: 800; color: var(--accent-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .outcome-table .t-out { white-space: nowrap; }
 .outcome-table .t-out b { color: var(--text); }
@@ -1679,6 +1681,7 @@ a { color: inherit; }
 .out-yes { color: #67e0b1; border-color: rgba(47, 206, 143, 0.4); background: rgba(47, 206, 143, 0.1); }
 .out-no { color: var(--muted); }
 
+/* Database dossier + destructive actions */
 .detail-actions { display: flex; align-items: center; gap: 8px; }
 .btn.danger { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
 .btn.danger:hover { background: #fecaca; color: #991b1b; }
