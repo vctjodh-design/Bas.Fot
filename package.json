@@ -1,0 +1,19 @@
+{
+  "name": "hoops-fixtures",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Basketball fixtures browser with past and upcoming date selection, scraped from Vitibet",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "backtest": "node scripts/backtest.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
