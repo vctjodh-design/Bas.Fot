@@ -6,6 +6,10 @@
 (() => {
   const byId = (id) => document.getElementById(id);
 
+  /* How much history is shown before the "Show all" toggle appears. */
+  const RUNS_PREVIEW = 6;
+  const DAYS_PREVIEW = 6;
+
   const esc = (value) =>
     String(value ?? '').replace(/[&<>"']/g, (c) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -57,6 +61,8 @@
     db: null,
     dbTab: 'days',
     query: '',
+    runsExpanded: false,
+    daysExpanded: false,
     details: new Map(),
     viewingFixture: null,
     stack: [],
@@ -370,7 +376,25 @@
         els.procRuns.innerHTML = '<p class="muted pad">No processing runs yet. Pick a date above and press Process.</p>';
         return;
       }
-      els.procRuns.innerHTML = jobs
+      // A date is often processed more than once, which turns the history into
+      // a list of attempts. Keep the newest run per date + sport + mode and
+      // fold the rest into a count.
+      const newest = new Map();
+      const attempts = new Map();
+      for (const job of jobs) {
+        const key = `${job.mode || 'database'}|${job.sport}|${job.date}`;
+        attempts.set(key, (attempts.get(key) || 0) + 1);
+        if (!newest.has(key)) newest.set(key, job);
+      }
+      const runs = [...newest.values()];
+      const shown = state.runsExpanded ? runs : runs.slice(0, RUNS_PREVIEW);
+      const toggle =
+        runs.length > RUNS_PREVIEW
+          ? `<button class="btn tiny" type="button" style="justify-self:start;margin-top:3px" data-more-runs>${
+              state.runsExpanded ? 'Show fewer runs' : `Show all ${runs.length} dates`
+            }</button>`
+          : '';
+      els.procRuns.innerHTML = shown
         .map((job) => {
           const counts = job.counts || {};
           return `<div class="run-row">
@@ -384,6 +408,9 @@
               ${counts.skipped ?? 0} skipped ·
               ${counts.teams ?? job.progress?.teams ?? 0} teams ·
               ${counts.competitions ?? job.progress?.competitions ?? 0} competitions
+              ${(attempts.get(`${job.mode || 'database'}|${job.sport}|${job.date}`) || 1) > 1
+                ? ` · ${attempts.get(`${job.mode || 'database'}|${job.sport}|${job.date}`)} runs, latest shown`
+                : ''}
               ${job.error ? ` · ${esc(job.error)}` : ''}
             </div>
             <div class="run-side">
@@ -394,13 +421,18 @@
             </div>
           </div>`;
         })
-        .join('');
+        .join('') + toggle;
     } catch {
       els.procRuns.innerHTML = '<p class="muted pad">Could not read processing history.</p>';
     }
   }
 
   els.procRuns.addEventListener('click', (event) => {
+    if (event.target.closest('[data-more-runs]')) {
+      state.runsExpanded = !state.runsExpanded;
+      loadRuns();
+      return;
+    }
     const button = event.target.closest('[data-open-day]');
     if (button) openDay(button.dataset.openDay, { jump: true });
   });
@@ -680,13 +712,22 @@
         els.dbList.innerHTML = '<p class="muted pad">No processed dates yet. Run the Processing tab first.</p>';
         return;
       }
-      els.dbList.innerHTML = days
+      // The date log grows with every run, so only the newest dates are shown
+      // until the rest are asked for; a search still looks at every date.
+      const shown = query || state.daysExpanded ? days : days.slice(0, DAYS_PREVIEW);
+      const toggle =
+        !query && days.length > DAYS_PREVIEW
+          ? `<button class="btn tiny" type="button" style="justify-self:start;margin-top:3px" data-more-days>${
+              state.daysExpanded ? 'Show fewer dates' : `Show all ${days.length} dates`
+            }</button>`
+          : '';
+      els.dbList.innerHTML = shown
         .map((day) => `<button class="db-row" type="button" data-day="${esc(day.key)}">
           <span class="db-row-main"><strong>${esc(day.date)}</strong> ${sportLabel(day.sport)}</span>
           <span class="muted">${day.fixtures} fixtures${day.skipped ? ` · ${day.skipped} skipped` : ''} · ${day.teams} teams · ${day.competitions} competitions</span>
           <span class="db-row-side">${statusPill(day.status)}<span class="muted">${esc(dateLabel(day.updatedAt))}</span></span>
         </button>`)
-        .join('');
+        .join('') + toggle;
       return;
     }
 
@@ -746,6 +787,11 @@
   });
 
   els.dbList.addEventListener('click', (event) => {
+    if (event.target.closest('[data-more-days]')) {
+      state.daysExpanded = !state.daysExpanded;
+      renderList();
+      return;
+    }
     const day = event.target.closest('[data-day]');
     if (day) return openDay(day.dataset.day);
     const team = event.target.closest('[data-team]');
